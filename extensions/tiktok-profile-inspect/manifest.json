@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "TikTok profile inspect",
+  "version": "1.0.0",
+  "description": "Runs the TikTok profile inspect overlay on the active tab when you click the toolbar icon (use on a profile page).",
+  "permissions": ["scripting", "activeTab"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Run TikTok profile inspect"
+  }
+}
