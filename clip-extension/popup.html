@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Clip profile inspect</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      width: 420px;
+      max-height: 640px;
+      overflow-x: hidden;
+      overflow-y: auto;
+      font-family: ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+      font-size: 15px;
+      line-height: 1.45;
+      color: #fff;
+      background: #0a0a0a;
+    }
+    .popup-context-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 10px 12px 0;
+      padding: 10px 14px;
+      border-radius: 12px;
+      background: rgba(14, 14, 16, 0.96);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+    .popup-context-bar .ctx-platform {
+      flex-shrink: 0;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-size: 9px;
+      color: rgba(125, 232, 240, 0.95);
+      padding: 5px 10px;
+      border-radius: 8px;
+      background: rgba(133, 246, 254, 0.1);
+      border: 1px solid rgba(133, 246, 254, 0.28);
+    }
+    .popup-context-bar .ctx-divider {
+      flex-shrink: 0;
+      width: 1px;
+      height: 22px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 1px;
+    }
+    .popup-context-bar .ctx-profile {
+      flex: 1;
+      min-width: 0;
+      text-align: right;
+      font-weight: 600;
+      font-size: 13px;
+      letter-spacing: -0.02em;
+      color: rgba(255, 255, 255, 0.92);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .popup-date-hint {
+      margin: 8px 12px 0;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 190, 84, 0.25);
+      background: rgba(50, 36, 10, 0.55);
+      color: rgba(255, 210, 150, 0.95);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .popup-date-hint.hidden { display: none !important; }
+    .popup-date-range-section.hidden { display: none !important; }
+    .hint-earnings { margin-top: 4px; color: rgba(255, 255, 255, 0.42); }
+    .hint-instagram {
+      margin-top: 2px;
+      padding: 8px 14px 0;
+      color: rgba(255, 200, 150, 0.88);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .hint-instagram.hidden { display: none !important; }
+    .hint-top {
+      font-size: 13px;
+      color: rgba(255,255,255,0.42);
+      padding: 12px 14px 0;
+      line-height: 1.45;
+    }
+    .hint-sub {
+      font-size: 12px;
+      color: rgba(255,255,255,0.38);
+      padding: 6px 14px 0;
+      line-height: 1.45;
+    }
+    #popup-offline {
+      padding: 18px 16px 20px;
+      color: rgba(255, 255, 255, 0.62);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .popup-offline-title {
+      margin: 0 0 10px;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: rgba(255, 255, 255, 0.92);
+    }
+    .popup-offline-detail {
+      margin: 0 0 12px;
+      color: rgba(255, 255, 255, 0.55);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .popup-offline-steps {
+      margin: 0 0 14px;
+      padding-left: 1.2em;
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .popup-offline-steps li { margin-bottom: 4px; }
+    .popup-retry-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      margin: 0;
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid rgba(133, 246, 254, 0.45);
+      background: rgba(133, 246, 254, 0.12);
+      color: #85f6fe;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .popup-retry-btn:hover {
+      background: rgba(133, 246, 254, 0.2);
+      color: #fff;
+    }
+    .popup-retry-btn:focus-visible {
+      outline: 2px solid rgba(133, 246, 254, 0.8);
+      outline-offset: 2px;
+    }
+    #popup-offline.hidden, #popup-main.hidden { display: none !important; }
+
+    .popup-lede {
+      margin: 8px 12px 0;
+      padding: 8px 12px;
+      border-radius: 8px;
+      background: rgba(133, 246, 254, 0.06);
+      border: 1px solid rgba(133, 246, 254, 0.18);
+      font-size: 12px;
+      line-height: 1.4;
+      color: rgba(200, 245, 250, 0.92);
+    }
+    .popup-lede.hidden { display: none !important; }
+
+    .popup-status {
+      margin: 6px 12px 0;
+      min-height: 1.2em;
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(133, 246, 254, 0.95);
+      letter-spacing: 0.02em;
+    }
+    .popup-status:empty { display: none; }
+
+    .section-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      margin: 14px 12px 6px;
+    }
+    .section-head h2 {
+      margin: 0;
+    }
+    .section-head .btn-text {
+      flex-shrink: 0;
+      padding: 4px 0;
+      border: none;
+      background: none;
+      color: rgba(133, 246, 254, 0.85);
+      font: inherit;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+    .section-head .btn-text:hover {
+      color: #fff;
+    }
+    .section-head .btn-text:focus-visible {
+      outline: 2px solid rgba(133, 246, 254, 0.6);
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
+
+    button:focus-visible,
+    .tt-tool-btn:focus-visible,
+    .tt-filter-btn:focus-visible,
+    .tt-mode-btn:focus-visible {
+      outline: 2px solid rgba(133, 246, 254, 0.75);
+      outline-offset: 2px;
+    }
+
+    .bar {
+      background: rgba(0,0,0,0.88);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      margin: 10px 12px;
+      padding: 10px 12px;
+    }
+    h2 {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      color: rgba(255,255,255,0.38);
+      margin: 14px 12px 6px;
+    }
+
+    .stats-grid {
+      display: flex;
+      flex-wrap: wrap;
+      align-content: flex-start;
+      padding: 6px 4px;
+    }
+    .tt-stat {
+      flex: 1 1 auto;
+      min-width: 56px;
+      padding: 8px 8px;
+      border-right: 1px solid rgba(255,255,255,0.07);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      text-align: center;
+    }
+    .tt-stat:nth-child(3n) { border-right: none; }
+    .tt-stat-label {
+      display: block;
+      font-size: 11px;
+      color: rgba(255,255,255,0.38);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+    .tt-stat-value { font-size: 15px; font-weight: bold; color: #fff; }
+    .tt-stat-value.green { color: #39FF14; }
+    .tt-stat-value.blue { color: #85F6FE; }
+    .tt-stat-value.peach { color: #FFB054; }
+    .tt-stat-value.pink { color: #ff2dfc; }
+
+    .row-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: rgba(255,255,255,0.32);
+      padding-right: 10px;
+      border-right: 1px solid rgba(255,255,255,0.08);
+      margin-right: 8px;
+      white-space: nowrap;
+    }
+    .filter-row, .mode-row, .tool-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .tt-filter-btn {
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: bold;
+      letter-spacing: 0.03em;
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: transparent;
+      color: rgba(255,255,255,0.5);
+      cursor: pointer;
+      min-height: 36px;
+    }
+    .tt-filter-btn:hover:not(:disabled) {
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+    }
+    .tt-filter-btn.active {
+      background: rgba(133,246,254,0.12);
+      border-color: rgba(133,246,254,0.45);
+      color: #85F6FE;
+    }
+    .tt-filter-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .tt-filter-btn.partial::after { content: "~"; margin-left: 2px; opacity: 0.6; }
+
+    .tt-mode-btn {
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: bold;
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: transparent;
+      color: rgba(255,255,255,0.5);
+      cursor: pointer;
+      min-height: 36px;
+    }
+    .tt-mode-btn:hover { background: rgba(255,255,255,0.08); color: #fff; }
+    .tt-mode-btn.active.clipping {
+      background: rgba(57,255,20,0.12);
+      border-color: rgba(57,255,20,0.4);
+      color: #39FF14;
+    }
+    .tt-mode-btn.active.creator {
+      background: rgba(255,176,84,0.12);
+      border-color: rgba(255,176,84,0.4);
+      color: #FFB054;
+    }
+
+    .rpm-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding-left: 10px;
+      border-left: 1px solid rgba(255,255,255,0.08);
+      margin-left: 4px;
+    }
+    .rpm-wrap.hidden { display: none !important; }
+    .rpm-label { font-size: 11px; color: rgba(255,255,255,0.35); text-transform: uppercase; }
+    #rpm-slider {
+      width: 100px;
+      height: 4px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: rgba(255,176,84,0.25);
+      border-radius: 3px;
+    }
+    #rpm-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #FFB054;
+      cursor: pointer;
+    }
+    #rpm-value { font-size: 14px; font-weight: bold; color: #FFB054; min-width: 44px; }
+
+    .tool-row .tt-tool-btn {
+      flex: 1 1 calc(50% - 6px);
+      min-width: 140px;
+      width: auto;
+    }
+    .tt-tool-btn {
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: bold;
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: transparent;
+      color: rgba(255,255,255,0.58);
+      cursor: pointer;
+      min-height: 44px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .tt-tool-btn:hover { background: rgba(255,255,255,0.08); color: #fff; }
+    .tt-tool-btn.on {
+      background: rgba(133,246,254,0.12);
+      border-color: rgba(133,246,254,0.4);
+      color: #85F6FE;
+    }
+    .hint-tools {
+      font-size: 12px;
+      color: rgba(255,255,255,0.36);
+      line-height: 1.45;
+      padding-top: 4px;
+    }
+
+    .settings label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+      font-size: 14px;
+      color: rgba(255,255,255,0.82);
+    }
+    .settings .field-hint {
+      display: block;
+      font-size: 11px;
+      font-weight: normal;
+      color: rgba(255,255,255,0.38);
+      margin-top: 4px;
+      line-height: 1.35;
+    }
+    .settings label span:first-child { flex: 1; min-width: 0; }
+    .settings input[type="number"] {
+      width: 88px;
+      padding: 6px 8px;
+      font-size: 14px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 6px;
+      color: #fff;
+    }
+    .settings input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+
+    .settings-advanced.hidden { display: none !important; }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 14px 12px 18px;
+      align-items: stretch;
+    }
+    .actions button {
+      flex: 1 1 calc(33.33% - 8px);
+      min-width: 110px;
+      padding: 12px 10px;
+      font-size: 14px;
+      font-family: inherit;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.16);
+      background: rgba(255,255,255,0.06);
+      color: #fff;
+      line-height: 1.3;
+    }
+    .actions button.primary {
+      background: rgba(133,246,254,0.16);
+      border-color: rgba(133,246,254,0.45);
+      color: #85F6FE;
+    }
+    #btn-plain-popup {
+      border-color: rgba(255,200,120,0.35);
+      color: rgba(255,220,180,0.98);
+      background: rgba(255,180,100,0.08);
+    }
+    #btn-plain-popup:hover {
+      background: rgba(255,180,100,0.14);
+    }
+    #btn-plain-popup.on {
+      border-color: rgba(133,246,254,0.5);
+      color: #85F6FE;
+      background: rgba(133,246,254,0.12);
+    }
+
+    .popup-supported-footer {
+      margin: 0;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(6, 6, 8, 0.98);
+      font-size: 11px;
+      line-height: 1.45;
+      color: rgba(255, 255, 255, 0.42);
+    }
+    .popup-supported-footer summary {
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 14px;
+      cursor: pointer;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(133, 246, 254, 0.75);
+      user-select: none;
+    }
+    .popup-supported-footer summary::-webkit-details-marker {
+      display: none;
+    }
+    .popup-supported-footer summary::after {
+      content: "▸";
+      font-size: 9px;
+      opacity: 0.65;
+      color: rgba(255, 255, 255, 0.5);
+    }
+    .popup-supported-footer[open] summary::after {
+      content: "▾";
+    }
+    .popup-supported-footer summary:hover {
+      color: rgba(133, 246, 254, 0.95);
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .popup-supported-panel {
+      padding: 0 14px 14px;
+    }
+    .popup-supported-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .popup-supported-list li {
+      margin-bottom: 10px;
+    }
+    .popup-supported-list li:last-child {
+      margin-bottom: 0;
+    }
+    .popup-supported-name {
+      display: block;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.62);
+      margin-bottom: 2px;
+    }
+    .popup-supported-match {
+      display: block;
+      word-break: break-word;
+    }
+    .popup-supported-match code {
+      font-size: 10px;
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+      color: rgba(133, 246, 254, 0.75);
+      background: rgba(133, 246, 254, 0.06);
+      padding: 1px 4px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div id="popup-offline">
+    <p class="popup-offline-title" id="popup-offline-title">Connect to a profile grid</p>
+    <p class="popup-offline-detail" id="popup-offline-detail">
+      Open this panel while a <strong>TikTok profile</strong>, <strong>YouTube Shorts</strong>, or <strong>Instagram Reels</strong> tab is active. After installing or updating, reload that tab once.
+    </p>
+    <ol class="popup-offline-steps" id="popup-offline-steps">
+      <li>Click the browser tab that shows the video grid.</li>
+      <li>Reload the tab if the extension was just updated.</li>
+      <li>Click <strong>Try again</strong> below.</li>
+    </ol>
+    <button type="button" class="popup-retry-btn" id="popup-retry">Try again</button>
+  </div>
+
+  <div id="popup-main" class="hidden">
+    <div id="popup-context-bar" class="popup-context-bar" hidden>
+      <span class="ctx-platform" id="ctx-platform">—</span>
+      <span class="ctx-divider" aria-hidden="true"></span>
+      <span class="ctx-profile" id="ctx-profile" title="">—</span>
+    </div>
+    <p id="popup-lede" class="popup-lede hidden" role="note"></p>
+    <p id="popup-status" class="popup-status" role="status" aria-live="polite"></p>
+    <h2>Stats</h2>
+    <div class="bar stats-grid" id="stats-grid"></div>
+
+    <div id="popup-date-range-section" class="popup-date-range-section">
+      <h2>Date range</h2>
+      <div class="bar filter-row" id="date-row"></div>
+      <p class="hint-sub hint-date">Tiles outside your range are tinted so you can see coverage at a glance.</p>
+    </div>
+    <p id="popup-date-hint" class="popup-date-hint hidden" role="status"></p>
+
+    <h2>Earnings mode</h2>
+    <div class="bar mode-row">
+      <span class="row-label">Mode</span>
+      <button type="button" class="tt-mode-btn clipping" id="mode-clipping" data-mode="clipping">Clip campaigns</button>
+      <button type="button" class="tt-mode-btn creator" id="mode-creator" data-mode="creator">Creator</button>
+      <div class="rpm-wrap hidden" id="rpm-wrap">
+        <span class="rpm-label">RPM</span>
+        <input type="range" id="rpm-slider" min="0.4" max="1" step="0.05" value="0.7" />
+        <span id="rpm-value">$0.70</span>
+      </div>
+    </div>
+    <p id="popup-earnings-hint" class="hint-sub hint-earnings"></p>
+    <p id="popup-instagram-note" class="hint-sub hint-instagram hidden" role="status"></p>
+
+    <h2>Tools</h2>
+    <div class="bar tool-row">
+      <button type="button" class="tt-tool-btn" id="btn-dim" title="Fades tiles that are not qualified or top so highlights stand out. Toggle off for equal emphasis.">Spotlight</button>
+    </div>
+    <p class="hint-top hint-tools">Long-press a tile for details · Esc closes the card</p>
+
+    <div class="section-head">
+      <h2>Model</h2>
+      <button type="button" class="btn-text" id="btn-toggle-advanced" aria-expanded="false" aria-controls="settings-advanced">
+        Advanced
+      </button>
+    </div>
+    <div class="bar settings">
+      <label>
+        <span>Min views (qualified)<span class="field-hint">Top tier: 3× this view count (fixed).</span></span>
+        <input type="number" id="minViews" min="0" step="1000" />
+      </label>
+      <label>
+        <span>Clip rate ($)</span>
+        <input type="number" id="ratePerMin" min="0" step="1" />
+      </label>
+      <label>
+        <span>Acceptance rate (0–1)<span class="field-hint">On average, this fraction of qualified videos you accept for clips.</span></span>
+        <input type="number" id="acceptanceRate" min="0" max="1" step="0.01" />
+      </label>
+      <div class="settings-advanced hidden" id="settings-advanced">
+        <label><span>Default load (days)</span><input type="number" id="seekBackDays" min="1" max="730" step="1" /></label>
+        <label><span>Scroll step (px)</span><input type="number" id="scrollStep" min="100" step="100" /></label>
+        <label><span>Scroll delay (ms)</span><input type="number" id="scrollDelay" min="100" step="50" /></label>
+        <label><span>Max idle rounds</span><input type="number" id="maxIdleRounds" min="1" max="20" step="1" /></label>
+        <label><span>Panel hide delay (ms)</span><input type="number" id="scrollResetDelay" min="50" step="50" /></label>
+        <label><span>Start with spotlight on</span><input type="checkbox" id="startDimmed" /></label>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button type="button" id="reset">Reset defaults</button>
+      <button type="button" id="btn-plain-popup" title="Strip extension outlines and dimming so the grid looks like the normal site. Click again to bring styling back.">Plain view</button>
+      <button type="button" class="primary" id="save" title="Applies to this profile tab right away.">Save settings</button>
+    </div>
+  </div>
+
+  <details class="popup-supported-footer" aria-label="Supported sites and URL patterns">
+    <summary>Supported sites &amp; URLs</summary>
+    <div class="popup-supported-panel">
+      <ul class="popup-supported-list">
+        <li>
+          <span class="popup-supported-name">TikTok</span>
+          <span class="popup-supported-match"><code>https://www.tiktok.com/*</code>, <code>https://tiktok.com/*</code>, <code>https://*.tiktok.com/*</code></span>
+        </li>
+        <li>
+          <span class="popup-supported-name">YouTube Shorts</span>
+          <span class="popup-supported-match"><code>https://www.youtube.com/*</code>, <code>https://youtube.com/*</code>, <code>https://m.youtube.com/*</code> — paths such as <code>/@…/shorts/</code>, <code>/channel/…/shorts/</code>, <code>/c/…/shorts/</code>, <code>/user/…/shorts/</code></span>
+        </li>
+        <li>
+          <span class="popup-supported-name">Instagram Reels</span>
+          <span class="popup-supported-match"><code>https://www.instagram.com/*</code>, <code>https://instagram.com/*</code> — profile Reels tab, e.g. <code>/username/reels/</code></span>
+        </li>
+      </ul>
+    </div>
+  </details>
+
+  <script src="popup.js"></script>
+</body>
+</html>
